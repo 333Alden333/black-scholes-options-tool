@@ -21,7 +21,7 @@ pip install numpy scipy
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/black-scholes-options-tool.git
+git clone https://github.com/333Alden333/black-scholes-options-tool.git
 cd black-scholes-options-tool
 ```
 
