@@ -30,10 +30,12 @@ cd black-scholes-options-tool
 pip install numpy scipy
 ```
 
-3. Make the CLI executable:
+3. Test the installation:
 ```bash
-chmod +x options_trading_cli.py
+python3 options_trading_cli.py --help
 ```
+
+You should see the help message with available options. The tool is now ready to use!
 
 ## 📖 Usage
 
