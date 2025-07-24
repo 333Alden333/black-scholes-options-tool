@@ -154,6 +154,203 @@ TRADING RECOMMENDATION:
 - **Negative Edge**: Option is overvalued (potential sell)
 - **Example**: 74% edge means the option trades at a 74% discount to fair value
 
+## 📊 Understanding and Estimating Volatility
+
+Volatility is the **most critical input** for Black-Scholes accuracy. The tool handles volatility in three ways:
+
+### **1. Automatic Implied Volatility (Recommended)**
+
+When you provide a current option price, the tool automatically calculates implied volatility:
+
+```bash
+# Tool calculates IV from the $5.50 market price
+python3 options_trading_cli.py --symbol AAPL --strike 150 --expiry 2025-09-19 \
+  --type call --underlying-price 155 --current-price 5.50 --risk-free-rate 0.05
+```
+
+**Advantages:**
+- **Most accurate**: Reflects market consensus on future volatility
+- **Easiest**: No research or calculations needed
+- **Forward-looking**: Already incorporates upcoming events
+
+### **2. Manual Volatility Input**
+
+When you have a specific volatility estimate:
+
+```bash
+python3 options_trading_cli.py --volatility 0.35 [other parameters]
+```
+
+### **3. Volatility Estimation Methods**
+
+When you need to estimate volatility manually:
+
+#### **Historical Volatility Calculation**
+
+**Simple 30-day historical volatility:**
+
+1. Get 30 days of closing prices
+2. Calculate daily returns: `ln(Price_today / Price_yesterday)`
+3. Calculate standard deviation of returns
+4. Annualize: `Standard_Deviation × √252`
+
+**Quick estimation by stock type:**
+- **Blue chips** (AAPL, MSFT): 20-35%
+- **Growth stocks** (TSLA, NVDA): 35-60%
+- **Volatile stocks** (COIN, ARKK): 60-100%
+- **Meme stocks** (GME, AMC): 80-150%
+
+#### **Event-Driven Adjustments**
+
+**Before earnings:**
+```
+Base historical vol: 30%
+Earnings volatility premium: +10-15%
+Estimated vol: 40-45%
+```
+
+**After earnings:**
+```
+Pre-earnings vol: 45%
+Post-earnings drop: Usually -15-20%
+New estimate: 25-30%
+```
+
+**Other events that increase volatility:**
+- **FDA approvals** (biotech): +20-40%
+- **Product launches**: +10-20%
+- **Legal decisions**: +15-30%
+- **Economic data**: +5-15%
+
+#### **Market Context Adjustments**
+
+**VIX-based adjustments:**
+- **VIX > 30 (high fear)**: Add 5-10% to historical vol
+- **VIX < 15 (complacency)**: Use historical vol or subtract 2-3%
+- **VIX 15-25 (normal)**: Use historical vol as baseline
+
+#### **Implied Volatility from Similar Options**
+
+Check IV of nearby strikes/expirations:
+
+```
+AAPL Options Chain:
+$145 Call (1 month): 28% IV
+$150 Call (1 month): 25% IV  ← Your target option
+$155 Call (1 month): 27% IV
+$150 Call (2 months): 23% IV
+
+Estimate: 24-27% range
+```
+
+#### **Volatility Smile/Skew**
+
+Options at different strikes have different implied volatilities:
+
+```
+Strike  |  Implied Vol  |  Notes
+$140    |     32%       |  Out-of-money puts (higher IV)
+$145    |     29%       |  
+$150    |     25%       |  At-the-money (lowest IV)
+$155    |     28%       |  
+$160    |     31%       |  Out-of-money calls (higher IV)
+```
+
+**Rule of thumb:** Use ATM (at-the-money) IV as baseline for nearby strikes.
+
+### **4. Volatility Estimation Examples**
+
+#### **Conservative Approach**
+```python
+# Use 30-day historical + safety buffer
+historical_vol = 0.28  # 28%
+conservative_estimate = historical_vol * 1.15  # Add 15% buffer = 32.2%
+```
+
+#### **Aggressive Approach**
+```python
+# Forecast based on upcoming events
+base_vol = 0.25  # 25% historical
+if earnings_this_week:
+    estimate = base_vol * 1.6  # 40%
+elif major_news_expected:
+    estimate = base_vol * 1.3  # 32.5%
+else:
+    estimate = base_vol  # 25%
+```
+
+#### **Real-World Example: AAPL Analysis**
+
+```
+Current AAPL price: $155
+30-day historical vol: 28%
+Earnings announcement: In 5 days
+Recent options IV range: 25-35%
+Current VIX: 18 (normal market)
+Recent stock movement: Steady uptrend
+
+Analysis:
+- Base historical vol: 28%
+- Earnings premium: +8% (28% × 0.3)
+- Market adjustment: 0% (VIX normal)
+- Final estimate: 36%
+
+Usage:
+python3 options_trading_cli.py --volatility 0.36 [other params]
+```
+
+### **5. Validation Techniques**
+
+#### **Cross-Check Method**
+```bash
+# Test your estimate against current market prices
+python3 options_trading_cli.py --symbol AAPL --strike 150 \
+  --current-price 5.50 --volatility YOUR_ESTIMATE
+
+# If tool's calculated IV ≈ your estimate, you're in the right range
+```
+
+#### **Sensitivity Analysis**
+```bash
+# Test multiple volatility scenarios
+python3 options_trading_cli.py --volatility 0.25 [params]  # Conservative
+python3 options_trading_cli.py --volatility 0.30 [params]  # Base case
+python3 options_trading_cli.py --volatility 0.35 [params]  # Aggressive
+
+# See how much your edge changes with different vol assumptions
+```
+
+### **6. Common Volatility Mistakes**
+
+❌ **Don't do:**
+- Use volatility from months ago
+- Ignore upcoming earnings/events
+- Apply the same vol to all strikes
+- Forget to annualize daily volatility
+
+✅ **Do:**
+- Update volatility estimates regularly
+- Account for known upcoming events
+- Consider volatility smile/skew
+- Use market-implied volatility when available
+
+### **7. Volatility Trading Strategies**
+
+#### **High IV Environment (IV > Historical)**
+- **Sell options**: Collect inflated premiums
+- **Iron condors**: Profit from IV crush
+- **Covered calls**: Enhanced income
+
+#### **Low IV Environment (IV < Historical)**
+- **Buy options**: Cheap premium before vol expansion
+- **Long straddles**: Position for volatility increase
+- **Calendar spreads**: Benefit from vol differences
+
+#### **IV Crush Plays**
+- **Before earnings**: IV often 40-60%
+- **After earnings**: IV drops to 20-30%
+- **Strategy**: Sell options before, buy after
+
 ## 💡 How to Apply This to Your Trading
 
 ### **1. Pre-Trade Analysis**
